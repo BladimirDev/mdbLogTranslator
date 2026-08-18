@@ -16,8 +16,6 @@ def separate_line(ls):
         timestamp, message = line.split(" : ", 1)
 
         if message.startswith("MDB msg:"):
-            tamanho, message = message.split("T:", 1)
-            print("tamanho", tamanho)
             print(timestamp, "É MDB: ", message)
 
         else:
