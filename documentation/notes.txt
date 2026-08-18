@@ -1,0 +1,40 @@
+MDB
+
+Multi-Drop Bus
+
+Byte format:
+1 Start Bit
+8 Data Bits
+1 Mode bit
+1 Stop bit
+Total:  11 bits
+
+Lsd/Start
+0
+1
+2
+3
+4
+5
+6
+7
+Mode
+MSB/stop
+
+
+
+Os bytes de DATA, só podem ser lidos pelos aparelhos com o endereço certo.
+
+Os 5 bits mais significativos serão utilizados para endereçamento. Ou seja 7, 6, 5, 4 e 3 da descrição do byte anterior serão utilizados para endereçamento
+Os 3 bits mais baixos serão utilizados para conter comandos especificos do aparelho. Ou seja, 2, 1, 0 nos permitem que até 8 instruções sejam incorporadas ao primero byte de um bloco
+
+O aparelho pode responder com várias respostas:
+• ACK (Acknowledgment) - Confirmação, no CHK seria 00H
+• NAK (Negative Acknowledgment) - Negativa, no CHK seria FFH
+• RET (Retransmit) - Retransmisão, no CHK seria AAH
+Se o aparelho endereçado não responder no time-out de 5ms, o dispositivo poderá repetir o mesmo comando ou enviar um comando diferente.
+
+CHK byte:
+Un CHK byte pode ser enviado no final de cada bloco de data.
+O byte CHK é um checksum calculado pela soma do byte de endereço e todos os bytes de dados
+
