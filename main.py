@@ -3,18 +3,18 @@ with open("mdb/cashless.mdb") as f:
 
 print(lines[2])
 
-#linha = lines[2]
+# def ler_documento(caminho):
+#     with open(caminho) as arquivo:
+#         return arquivo.readlines()
 
-#tms = linha[0:19]
-#tamanho = linha[32:35]
-#opencode = linha[39:53]
-#dados_mdb = linha[42:62]
-#control_bytes = linha[54:62]
 
-#print("Time: ", tms)
-#print("Tamanho: ", tamanho)
-#print("Opencode: ", opencode)
-#print("Dados MDB: ", dados_mdb)
-#print("Control Bytes:", control_bytes)
-#for line in lines:
-    #print(line)
+def separate_line(lines):
+    for line in lines:
+        timestamp, message = line.split(" : ", 1)
+
+        if message.startswith("MDB msg:"):
+            print(timestamp, "É MDB: ", message)
+        else:
+            print(timestamp, "Nullaw" , message)
+
+print(separate_line(lines))
