@@ -43,3 +43,5 @@ as mensagens tem que começar com f1 ou f2
 Little endian
 
 hexadecimal 0x0000000
+
+conseguir ler comandos de setup

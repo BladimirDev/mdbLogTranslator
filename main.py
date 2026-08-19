@@ -1,5 +1,8 @@
 import binascii
 
+from more_itertools.more import consecutive_groups
+from mpmath.libmp.gammazeta import primesieve
+
 #definição das variáveis globais
 ultimo_comando = None
 ultimo_dados = None
@@ -32,6 +35,45 @@ def parseVM(dados_bin):
             print("Comando: Reset")
         case 0x11 | 0x61:
             print("Comando: Setup")
+            subcomando = dados_bin[2]
+            config_data = dados_bin[2:]
+            print("Config data: ", config_data)
+
+            match subcomando:
+                case 0x00:
+                    for i in range(0, len(config_data), 2):
+                        match i:
+                            case 2:
+                                option = config_data[i]
+                                print(option)
+                                match option:
+                                    case 0x01:
+                                        print("Config 1: Config relativa a 0x01")
+
+                                    case 0x02:
+                                        print("Config 1: Config relativa a 0x02")
+
+                                    case 0x03:
+                                        print("Config 1: Config relativa a 0x03")
+
+                            case 4:
+                                print("Config 2: Columns on Display. The number of columns on the display. Set to 00H if the display is not available to the reader.")
+
+                            case 6:
+                                print("Config 3: Rows on Display. The number of rows on the display")
+
+                            case 8:
+                                print("Config 4: lorem")
+                case 0x01:
+                    print("MAx/Min prices")
+                    for i in range(0, len(config_data), 2):
+                        match i:
+                            case 2 | 4:
+                                print("Y2-Y3")
+
+                            case 6 | 8:
+                                print("Y4-Y5")
+
         case 0x12 | 0x62:
             print("Comando: Poll")
         case 0x13 | 0x63:
@@ -133,7 +175,7 @@ with open("mdb/cashless.txt") as arquivo:
             tipo = dados[:2]
 
             #mudamos o valor de dados ignorando os valores desnecessários para a leitura
-            dados = dados[2:-6]
+            dados = dados[2:-10]
 
             #utilizando a biblioteca binascii definimos os valores dentro de dados como dados_bin, transformando-os em hex
             dados_bin = binascii.unhexlify(dados)
