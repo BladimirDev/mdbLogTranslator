@@ -18,7 +18,7 @@ def parseVM(dados_bin):
     ultimo_dados = dados_bin
 
     #separação
-    print("_____COMANDO_________")
+    print("\n_____COMANDO_________")
 
     #mostramos a data e hora
     print("Timestamp", data, hora)
@@ -50,7 +50,7 @@ def parserDevice(dados_bin):
     global ultimo_comando
 
     #separação
-    print("______RESPOSTA______")
+    print("\n______RESPOSTA______")
 
     #mostramos a data e hora
     print("Timestamp:", data, hora)
