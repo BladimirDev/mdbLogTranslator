@@ -26,7 +26,3 @@ with open("mdb/cashless.mdb") as arquivo:
                 bin_valor= int(bit, 16)
                 print(bin_valor)
             print("----------hex------------")
-
-        else:
-            print("Nao e uma mensagem MDB, mas o conteudo e:", content)
-            print("----------nat------------")

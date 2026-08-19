@@ -38,3 +38,8 @@ CHK byte:
 Un CHK byte pode ser enviado no final de cada bloco de data.
 O byte CHK é um checksum calculado pela soma do byte de endereço e todos os bytes de dados
 
+as mensagens tem que começar com f1 ou f2
+
+Little endian
+
+hexadecimal 0x0000000
