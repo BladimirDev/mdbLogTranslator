@@ -1,16 +1,34 @@
 import binascii
 
-from more_itertools.more import consecutive_groups
-from mpmath.libmp.gammazeta import primesieve
-
 #definição das variáveis globais
 ultimo_comando = None
 ultimo_dados = None
 
 #definição das funções globais
 
+def exibir_dados(linha, data, hora, dados_bin, tam, control_bytes):
+    #Linha bruta
+    print("Linha:", linha.strip())
+
+    #mostramos a data e hora
+    print("Timestamp", data, hora)
+
+    #mostramos o valor da variavel dados_bin
+    print("parseVM: ", dados_bin.hex(" "))
+
+    #Mostramos o tamanho das instruções
+    print("Tamanho:", tam)
+
+    #Mostramos os control Bytes
+    print("Control Bytes:", control_bytes.hex(" "))
+
+
 #   definição da função de parseVM
-def parseVM(dados_bin):
+def parseVM(dados_bin, tam):
+
+    if tam<=6:
+        print("ACK enviado!")
+        return
 
     #definimos a utilização das variaveis globais
     global ultimo_comando
@@ -23,21 +41,17 @@ def parseVM(dados_bin):
     #separação
     print("\n_____COMANDO_________")
 
-    #mostramos a data e hora
-    print("Timestamp", data, hora)
-
-    #mostramos o valor da variavel dados_bin
-    print("parseVM: ", dados_bin)
-
+    exibir_dados(linha.strip(), data, hora, dados_bin, tam, control_bytes)
 
     match ultimo_comando:
         case 0x10 | 0x60:
             print("Comando: Reset")
+
         case 0x11 | 0x61:
             print("Comando: Setup")
             subcomando = dados_bin[2]
             config_data = dados_bin[2:]
-            print("Config data: ", config_data)
+            print("Config data: ", config_data.hex(" "))
 
             match subcomando:
                 case 0x00:
@@ -45,7 +59,6 @@ def parseVM(dados_bin):
                         match i:
                             case 2:
                                 option = config_data[i]
-                                print(option)
                                 match option:
                                     case 0x01:
                                         print("Config 1: Config relativa a 0x01")
@@ -63,9 +76,20 @@ def parseVM(dados_bin):
                                 print("Config 3: Rows on Display. The number of rows on the display")
 
                             case 8:
-                                print("Config 4: lorem")
+                                print("Config 4: ", end="")
+                                quarta_config = config_data[i]
+                                match quarta_config:
+                                    case 0x00:
+                                        print("Numbers, upper case letters, blank and decimal point.")
+
+                                    case 0x01:
+                                        print("Full ASCII")
+
+                                    case 0x02 | 0x07:
+                                        print("Unassigned")
+
                 case 0x01:
-                    print("MAx/Min prices")
+                    print("Max/Min prices")
                     for i in range(0, len(config_data), 2):
                         match i:
                             case 2 | 4:
@@ -86,7 +110,7 @@ def parseVM(dados_bin):
             print("Comando: Expansion")
 
 #   definição da função de parseDevice
-def parserDevice(dados_bin):
+def parserDevice(dados_bin, tam):
 
     #definimos a utilização da variavel global ultimo_comando
     global ultimo_comando
@@ -94,11 +118,7 @@ def parserDevice(dados_bin):
     #separação
     print("\n______RESPOSTA______")
 
-    #mostramos a data e hora
-    print("Timestamp:", data, hora)
-
-    #mostramos o valor da variavel dados_bin
-    print("parseDevice:", dados_bin)
+    exibir_dados(linha, data, hora, dados_bin, tam, control_bytes)
 
     #mostramos a resposta do device
     print("Resposta para o ultimo comando: ", end="")
@@ -108,7 +128,23 @@ def parserDevice(dados_bin):
             print("#---10")
 
         case 0x11 | 0x61:
-            print("#---11")
+            subcomando = dados_bin[2]
+            config_data = dados_bin[2:]
+            match subcomando:
+                case 0x00:
+                    print("Config data: ")
+                    for i in range(0, len(config_data), 2):
+                        match i:
+                            case 2:
+                                match config_data[i]:
+                                    case 0x01:
+                                        print("Config 1: Config relativa a 0x01")
+
+                                    case 0x02:
+                                        print("Config 1: Config relativa a 0x02")
+
+                                    case 0x03:
+                                        print("Config 1: Config relativa a 0x03")
 
         case 0x12 | 0x62:
             resp = dados_bin[0]
@@ -147,13 +183,12 @@ def parserDevice(dados_bin):
             print("#---17")
 
 #apertura do arquivo cashless.txt
-with open("mdb/cashless.txt") as arquivo:
-
+with open("mdb/cashless.mdb") as arquivo:
+    cont = 0
     #definição do nosso dicionário de parse
 
     #laço for que percorre todas as linhas do arquivo e as define como linha
     for linha in arquivo:
-
         #Separando a nossa linha
         parts = linha.split(" ", 3)
 
@@ -161,6 +196,8 @@ with open("mdb/cashless.txt") as arquivo:
         data = parts[0]
         hora = parts[1]
         content = parts[3]
+
+
 
         #se for um registro hexadecimal
         if content.startswith("MDB msg: "):
@@ -174,12 +211,20 @@ with open("mdb/cashless.txt") as arquivo:
             #definimos a variavel dados como os dois primeiros valores da string dados
             tipo = dados[:2]
 
+            control_bytes = binascii.unhexlify(dados[len(dados)-6:])
+
             #mudamos o valor de dados ignorando os valores desnecessários para a leitura
             dados = dados[2:-10]
 
             #utilizando a biblioteca binascii definimos os valores dentro de dados como dados_bin, transformando-os em hex
             dados_bin = binascii.unhexlify(dados)
 
+            #Somente continua se for igual a F1 ou F2
+            if not tipo == "F1" or tipo == "F2":
+                continue
+
+            #Definição do tamanho da mensagem
+            tam = int(content[12:-len(content)+14])
 
             parseDict = {
                 "F1": parseVM,
@@ -189,7 +234,6 @@ with open("mdb/cashless.txt") as arquivo:
             #criamos a variavel ParseFun como o valor que tem dentro de cada indice do dicionario
             parseFun = parseDict.get(tipo)
 
-
             #se parseFun tiver um valor, vai executar a função correspondente ao nome encontrado pelo índice
             if parseFun:
-                parseFun(dados_bin)
+                parseFun(dados_bin, tam)
