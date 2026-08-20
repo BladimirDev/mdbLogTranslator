@@ -1,13 +1,10 @@
 import binascii
 
-from debian.changelog import endline
-
 #definição das variáveis globais
 ultimo_comando = None
 ultimo_dados = None
 
 #definição das funções globais
-
 def exibir_dados(linha, data, hora, dados_bin, tam, control_bytes):
     #Linha bruta
     print("Linha:", linha.strip())
@@ -23,8 +20,6 @@ def exibir_dados(linha, data, hora, dados_bin, tam, control_bytes):
 
     #Mostramos os control Bytes
     print("Control Bytes:", control_bytes.hex(" "))
-
-
 
 #   definição da função de parseVM
 def parseVM(dados_bin, tam):
@@ -75,13 +70,13 @@ def parseVM(dados_bin, tam):
                                         print("Config 1: The VMC is able to support level 02, but also supports some or all of; the optional features listed in the EXPANSION ID command (i.e., file; transfer, 32 bit credit, multi-currency / language features, negative; vend, and / or data entry).")
 
                             case 4:
-                                print("Config 2: Columns on Display. The number of columns on the display. Set to 00H if the display is not available to the reader.")
+                                print("Columns on Display:", int(config_data[4]))
 
                             case 6:
-                                print("Config 3: Rows on Display. The number of rows on the display")
+                                print("ows on Display:", int(config_data[6]))
 
                             case 8:
-                                print("Config 4: ", end="")
+                                print("Display Information: ", end="")
                                 quarta_config = config_data[i]
                                 match quarta_config:
                                     case 0x00:
@@ -97,11 +92,12 @@ def parseVM(dados_bin, tam):
                     print("Max/Min prices")
                     for i in range(0, len(config_data), 2):
                         match i:
-                            case 2 | 4:
-                                print("Y2-Y3")
-
-                            case 6 | 8:
-                                print("Y4-Y5")
+                            case 2:
+                                max_prices = [config_data[2], config_data[4]]
+                                print("Max Price:", int.from_bytes(max_prices, byteorder="little"))
+                            case 6:
+                                min_price = [config_data[6], config_data[8]]
+                                print("Min Price:", int.from_bytes(min_price,  byteorder="little"))
 
         #caso Poll
         case 0x12 | 0x62:
@@ -239,7 +235,6 @@ def parseVM(dados_bin, tam):
                 case 0xFF:
                     print('Diagnostics')
 
-
 #   definição da função de parseDevice
 def parserDevice(dados_bin, tam):
 
@@ -265,22 +260,31 @@ def parserDevice(dados_bin, tam):
             config_data = dados_bin[2:]
             match subcomando:
                 case 0x00:
-                    print("Config data: ")
+                    print("Config data")
                     for i in range(0, len(config_data), 2):
                         match i:
                             case 2: #Z2
                                 match config_data[i]:
                                     case 0x01:
-                                        print("Config 1: Config relativa a 0x01")
+                                        print("Config 1: The reader is not capable or will not perform the advanced features as specified in Table 1: COMMANDS & RESPONSES following; Section 7.3.2. The reader will not provide advanced information to; the VMC, but can do the advanced features internally (transparently; to the VMC). The reader has no revaluation capability.")
 
                                     case 0x02:
-                                        print("Config 1: Config relativa a 0x02")
+                                        print("Config 1: The reader is capable and willing to perform the advanced features as specified in Table 1: COMMANDS & RESPONSES following; Section 7.3.2. The reader will provide advanced information to the; VMC (if possible) and will not do the advanced features internally.")
 
                                     case 0x03:
-                                        print("Config 1: Config relativa a 0x03")
+                                        print("Config 1: The reader is able to support level 02, but also supports some or all; of the optional features listed in the EXPANSION ID command (i.e.,; file transfer, 32 bit credit, multi-currency / language features,; negative vend, and / or data entry).")
 
-                            case 4 | 6: #Z3-Z4
-                                print("Configuração refente a Z3 e Z4")
+                            case 4: #Z3-Z4
+                                print("Country/ Currency code: ")
+                                codigo_ISO = hex(config_data[0])
+                                print("Tipo de código numérico ISO:", end="")
+                                print(codigo_ISO)
+                                match codigo_ISO:
+                                    #fiquei na dúvida como realmente podemos comparar esse valor
+                                    case 0x00:
+                                        print('International Telephone Code')
+                                    case 0x01:
+                                        print('Latest version of the ISO 4217')
                             case 8: #Z5
                                 print("Configuração referente a Z5")
                             case 10: #Z6
@@ -335,7 +339,7 @@ def parserDevice(dados_bin, tam):
             print("#---17")
 
 #apertura do arquivo cashless.txt
-with open("mdb/cashless.mdb") as arquivo:
+with open("mdb/cashless.txt") as arquivo:
     cont = 0
     #definição do nosso dicionário de parse
 
