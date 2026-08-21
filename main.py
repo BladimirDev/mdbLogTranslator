@@ -568,12 +568,10 @@ def parserDevice(dados_bin, tam):
                         #Revalue Limit Amount
                         case 0x0F:
                             print('Revalue Limit Amount: ', end='')
-                            revalue_limit_amount = [config_data[2], config_data[4]]
+                            revalue_limit_amount = [dados_bin[2], dados_bin[4]]
                             print(int.from_bytes(revalue_limit_amount, byteorder="little"))
                         case 0x0E:
                             print('Revalue Denied')
-
-
 
         #caso Expansion
         case 0x17 | 0x67:
