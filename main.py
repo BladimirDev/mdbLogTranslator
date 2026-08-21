@@ -1,5 +1,7 @@
 import binascii
 
+from click import prompt
+
 #definição das variáveis globais
 ultimo_comando = None
 ultimo_dados = None
@@ -253,7 +255,7 @@ def parserDevice(dados_bin, tam):
     match ultimo_comando:
         #caso Reset
         case 0x10 | 0x60:
-            print("#---10")
+            print("Reset")
 
         #caso Setup
         case 0x11 | 0x61:
@@ -562,6 +564,14 @@ def parserDevice(dados_bin, tam):
                 #Revalue Limit Request
                 case 0x01:
                     print('Revalue limit Request')
+                    match dados_bin[0]:
+                        #Revalue Limit Amount
+                        case 0x0F:
+                            print('Revalue Limit Amount: ', end='')
+                            revalue_limit_amount = [config_data[2], config_data[4]]
+                            print(int.from_bytes(revalue_limit_amount, byteorder="little"))
+                        case 0x0E:
+                            print('Revalue Denied')
 
 
 
