@@ -217,10 +217,15 @@ def parseVM(dados_bin, tam):
                 #Revalue Request
                 case 0x00:
                     print('Revalue Request')
+                    revalue_amount = [dados_bin[2], dados_bin[4]]
+                    print('Revalue amount:', int.from_bytes(revalue_amount, byteorder="little"))
 
                 #Revalue Limit Request
                 case 0x01:
                     print('Revalue Limit Request')
+                    revalue_amount = [dados_bin[2], dados_bin[4], dados_bin[6], dados_bin[8]]
+                    print('Revalue amount:', int.from_bytes(revalue_amount, byteorder="little"))
+
 
         #caso Expansion
         case 0x17 | 0x67:
