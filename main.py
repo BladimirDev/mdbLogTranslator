@@ -10,7 +10,7 @@ def exibir_dados(linha, data, hora, dados_bin, tam, control_bytes):
     print("Linha:", linha.strip())
 
     #mostramos a data e hora
-    print("Timestamp", data, hora)
+    print("Timestamp:", data, hora)
 
     #mostramos o valor da variavel dados_bin
     print("parseVM: ", dados_bin.hex(" "))
@@ -58,16 +58,17 @@ def parseVM(dados_bin, tam):
                     for i in range(0, len(config_data), 2):
                         match i:
                             case 2:
+                                print("VMC Feature Level: ", end='')
                                 option = config_data[i]
                                 match option:
                                     case 0x01:
-                                        print("The VMC is not capable or will not perform the advanced features as specified in Table 1: COMMANDS & RESPONSES following; Section 7.3.2. The reader will not provide advanced information to; the VMC, but can do the advanced features internally (transparently; to the VMC). The reader has no revaluation capability.")
+                                        print('01')
 
                                     case 0x02:
-                                        print("Config 1: The VMC is capable and willing to perform the advanced features as; specified in Table 1: COMMANDS & RESPONSES following; Section 7.3.2. The reader will provide advanced information to the; VMC (if possible) and will not do the advanced features internally.")
+                                        print('02')
 
                                     case 0x03:
-                                        print("Config 1: The VMC is able to support level 02, but also supports some or all of; the optional features listed in the EXPANSION ID command (i.e., file; transfer, 32 bit credit, multi-currency / language features, negative; vend, and / or data entry).")
+                                        print('03')
 
                             case 4:
                                 print("Columns on Display:", int(config_data[4]))
@@ -257,42 +258,78 @@ def parserDevice(dados_bin, tam):
         #caso Setup
         case 0x11 | 0x61:
             subcomando = dados_bin[2]
-            config_data = dados_bin[2:]
+            config_data = dados_bin
             match subcomando:
                 case 0x00:
-                    print("Config data")
+                    print("--Config data---")
                     for i in range(0, len(config_data), 2):
+
                         match i:
                             case 2: #Z2
                                 match config_data[i]:
                                     case 0x01:
-                                        print("Config 1: The reader is not capable or will not perform the advanced features as specified in Table 1: COMMANDS & RESPONSES following; Section 7.3.2. The reader will not provide advanced information to; the VMC, but can do the advanced features internally (transparently; to the VMC). The reader has no revaluation capability.")
+                                        print("Reader Feature Level: 01")
 
                                     case 0x02:
-                                        print("Config 1: The reader is capable and willing to perform the advanced features as specified in Table 1: COMMANDS & RESPONSES following; Section 7.3.2. The reader will provide advanced information to the; VMC (if possible) and will not do the advanced features internally.")
+                                        print("Reader Feature Level: 02")
 
                                     case 0x03:
-                                        print("Config 1: The reader is able to support level 02, but also supports some or all; of the optional features listed in the EXPANSION ID command (i.e.,; file transfer, 32 bit credit, multi-currency / language features,; negative vend, and / or data entry).")
+                                        print("Reader Feature Level: 03")
 
                             case 4: #Z3-Z4
-                                print("Country/ Currency code: ")
-                                codigo_ISO = hex(config_data[0])
-                                print("Tipo de código numérico ISO:", end="")
-                                print(codigo_ISO)
-                                match codigo_ISO:
+                                print("Country/ Currency code: ", end='')
+                                codigo_ISO = binascii.hexlify(bytearray([config_data[i], config_data[i+2]])).decode()
+                                match codigo_ISO[0]:
                                     #fiquei na dúvida como realmente podemos comparar esse valor
-                                    case 0x00:
-                                        print('International Telephone Code')
-                                    case 0x01:
-                                        print('Latest version of the ISO 4217')
-                            case 8: #Z5
-                                print("Configuração referente a Z5")
+                                    case '0':
+                                        print('International Telephone Code --', codigo_ISO[1:])
+                                    case '1':
+                                        print('Latest version of the ISO 4217 --', codigo_ISO[1:])
+                            case 6: #Z5
+                                print("Scale Factor:", config_data[i])
+
                             case 10: #Z6
-                                print("Configuração refente a Z6")
+                                print("Decimal Places:", config_data[i])
                             case 12: #Z7
-                                print("Configuração referente a Z7")
+                                print("Application Maximum Response Time - seconds:", config_data[i])
                             case 14: #Z8
-                                print("Configuração refente a Z8")
+                                print("Miscellaneous Options:")
+                                misce_options =bin(config_data[i])
+                                misce_options = misce_options[::-1]
+                                for i in range(len(misce_options[2:])):
+                                    match i:
+                                        #b0
+                                        case 0:
+                                            match misce_options[i]:
+                                                case '0':
+                                                    print('The payment media reader is NOT capable of restoring funds to the user’s payment media or account. Do not request refunds.')
+
+                                                case '1':
+                                                    print('The payment media reader is capable of restoring funds to the; user’s payment media or account. Refunds may be requested')
+                                        #b1
+                                        case 1:
+                                            match misce_options[i]:
+                                                case '0':
+                                                    print('The payment media reader is NOT multivend capable. Terminate session after each vend.')
+
+                                                case '1':
+                                                    print('The payment media reader is multivend capable. Multiple items may be purchased within a single session.')
+                                        #b2
+                                        case 2:
+                                            match misce_options[i]:
+                                                case '0':
+                                                    print('The payment media reader does NOT have a display.')
+
+                                                case '1':
+                                                    print('The payment media reader does have its own display.')
+                                        #b3
+                                        case 3:
+                                            match misce_options[i]:
+                                                case '0':
+                                                    print('The payment media reader does NOT support the VEND/CASH SALE subcommand.')
+
+                                                case '1':
+                                                    print('The payment media reader does support the VEND/CASH SALE subcommand.')
 
                 case 0x01:
                     print("No data *")
@@ -300,46 +337,240 @@ def parserDevice(dados_bin, tam):
         #caso Poll
         case 0x12 | 0x62:
             resp = dados_bin[0]
+            config_data = dados_bin
             match resp:
+                #Just Reset
                 case 0x00:
                     print("Just Reset")
+
+                #Reader Config Data
                 case 0x01:
+                    print('Config data', config_data)
                     print("Reader Config Data")
+                    for i in range(0, len(config_data), 2):
+
+                        match i:
+                            case 2: #Z2
+                                match config_data[i]:
+                                    case 0x01:
+                                        print("Reader Feature Level: 01")
+
+                                    case 0x02:
+                                        print("Reader Feature Level: 02")
+
+                                    case 0x03:
+                                        print("Reader Feature Level: 03")
+
+                            case 4: #Z3-Z4
+                                print("Country/ Currency code: ", end='')
+                                codigo_ISO = binascii.hexlify(bytearray([config_data[i], config_data[i+2]])).decode()
+                                match codigo_ISO[0]:
+                                    #fiquei na dúvida como realmente podemos comparar esse valor
+                                    case '0':
+                                        print('International Telephone Code --', codigo_ISO[1:])
+                                    case '1':
+                                        print('Latest version of the ISO 4217 --', codigo_ISO[1:])
+                            case 6: #Z5
+                                print("Scale Factor:", config_data[i])
+
+                            case 10: #Z6
+                                print("Decimal Places:", config_data[i])
+                            case 12: #Z7
+                                print("Application Maximum Response Time - seconds:", config_data[i])
+                            case 14: #Z8
+                                print("Miscellaneous Options:")
+                                misce_options =bin(config_data[i])
+                                misce_options = misce_options[::-1]
+                                for i in range(len(misce_options[2:])):
+                                    match i:
+                                        #b0
+                                        case 0:
+                                            match misce_options[i]:
+                                                case '0':
+                                                    print('The payment media reader is NOT capable of restoring funds to the user’s payment media or account. Do not request refunds.')
+
+                                                case '1':
+                                                    print('The payment media reader is capable of restoring funds to the; user’s payment media or account. Refunds may be requested')
+                                        #b1
+                                        case 1:
+                                            match misce_options[i]:
+                                                case '0':
+                                                    print('The payment media reader is NOT multivend capable. Terminate session after each vend.')
+
+                                                case '1':
+                                                    print('The payment media reader is multivend capable. Multiple items may be purchased within a single session.')
+                                        #b2
+                                        case 2:
+                                            match misce_options[i]:
+                                                case '0':
+                                                    print('The payment media reader does NOT have a display.')
+
+                                                case '1':
+                                                    print('The payment media reader does have its own display.')
+                                        #b3
+                                        case 3:
+                                            match misce_options[i]:
+                                                case '0':
+                                                    print('The payment media reader does NOT support the VEND/CASH SALE subcommand.')
+
+                                                case '1':
+                                                    print('The payment media reader does support the VEND/CASH SALE subcommand.')
+
+                #Display Request
                 case 0x02:
                     print("Display Request")
+                    for i in range(0, len(config_data), 2):
+                        match i:
+                            case 2:
+                                print('Display time:', config_data[i])
+
+                            case 4:
+                                print('Display Data - ASCII')
+                                display_data = config_data[4:]
+                                print(display_data)
+
+                #Begin Session
                 case 0x03:
                     print("Begin Session")
+                    print('Founds Avaliable: ', end='')
+                    founds_av = [dados_bin[2], dados_bin[4]]
+                    match founds_av:
+                        case [255, 254]:
+                            print("Lesser of the user’s payment media or account balance or FFFEh units.")
+
+                        case [ 255, 255]:
+                            print('Not yet determined - FFFFh. (Allows selection without displaying balance)')
+
+                #Session Cancel Request
                 case 0x04:
                     print("Session Cancel Request")
+
+                #Vend Aproved
                 case 0x05:
                     print("Vend Approved")
+                    print('Vend Amount: ', end='')
+                    vend_amount = [dados_bin[2], dados_bin[4]]
+                    print(int.from_bytes(vend_amount, byteorder="little"))
+
+                #Vend Denied
                 case 0x06:
                     print("Vend Denied")
+
+                #End Session
                 case 0x07:
                     print("End Session")
+
+                #Cancelled
                 case 0x08:
                     print("Cancelled")
-                case 0x09:
-                    print("Peripheral ID")
 
         #caso Vend
         case 0x13 | 0x63:
-            print("#---13")
+            subcommand = dados_bin[2]
+
+            print("Vend")
+            match subcommand:
+                case 0x00:
+                    match dados_bin[0]:
+                        #Vend Approved
+                        case 0x05:
+                            print('Vend Approved')
+                            print('Vend Amount: ', end='')
+                            vend_amount = [dados_bin[2], dados_bin[4]]
+                            print(int.from_bytes(vend_amount, byteorder="little"))
+
+                        case 0x06:
+                            print('Vend Denied')
+
+                #Vend Cancel
+                case 0x01:
+                    print('Vend Cancel')
+                    print('Vend Denied')
+
+                #Vend Sucess
+                case 0x02:
+                    print('Vend Sucess')
+
+                #Vend Failure
+                case 0x03:
+                    print('Vend Failure')
+
+                #Session Complete
+                case 0x04:
+                    print('Session Complete')
+                    print('End Session')
+
+                #Cash Sale
+                case 0x05:
+                    print('Cash Sale')
+
+                #Negative Vend Request
+                case 0x06:
+                    print('Negative Vend Request')
+                    match dados_bin[0]:
+                        #vend Aproved
+                        case 0x05:
+                            print('Vend Approved')
+                            print('Vend Amount: ', end='')
+                            vend_amount = [dados_bin[2], dados_bin[4]]
+                            print(int.from_bytes(vend_amount, byteorder="little"))
+
+                        #vend Denied
+                        case 0x06:
+                            print('Vend Denied')
 
         #caso Reader
         case 0x14 | 0x64:
-            print("#---14")
+            subcommand = dados_bin[2]
+            print("Reader")
+            match subcommand:
+                #Reader Disable
+                case 0x00:
+                    print('#Reader Disable')
+
+                #Reader Enable
+                case 0x01:
+                    print('#Reader Enable')
+
+                #Reader Cancel
+                case 0x02:
+                    print('#Reader Cancel')
+                    print('Canceled')
+
+                #Data Entry Response
+                case 0x03:
+                    print('#Data Entry Response')
 
         #caso Revalue
         case 0x15 | 0x65:
-            print("#---15")
+            subcommand = dados_bin[2]
+            print("Revalue")
+            match subcommand:
+
+                #Revalue Request
+                case 0x00:
+                    print('Revalue Request')
+                    match dados_bin[0]:
+                        #Revalue Aproved
+                        case 0x0D:
+                            print('Revalue Aproved')
+
+                        #Revalue Danied
+                        case 0x0E:
+                            print('Revalue Denied')
+
+                #Revalue Limit Request
+                case 0x01:
+                    print('Revalue limit Request')
+
+
 
         #caso Expansion
         case 0x17 | 0x67:
             print("#---17")
 
 #apertura do arquivo cashless.txt
-with open("mdb/cashless.txt") as arquivo:
+with open("mdb/cashless.mdb") as arquivo:
     cont = 0
     #definição do nosso dicionário de parse
 
