@@ -117,15 +117,28 @@ def parseVM(dados_bin, tam):
             match subcommand:
                 #Vend Request
                 case 0x00:
-                    print("Vend Request")
+                    for i in range(0, len(dados_bin), 2):
+                        match i:
+                            case 0:
+                                print('Vend Request')
+                            case 2:
+                                item_price = [dados_bin[i], dados_bin[i+2]]
+                                print(int.from_bytes(item_price, byteorder="little"))
+
+                            case 6:
+                                item_number = [dados_bin[i], dados_bin[i+2]]
+                                print(int.from_bytes(item_number, byteorder="little"))
 
                 #Vend Cancel
                 case 0x01:
                     print("Vend Cancel")
+                    print('Vend Denied')
 
                 #Vend Sucess
                 case 0x02:
                     print('Vend Sucess')
+                    item_number = [dados_bin[2], dados_bin[4]]
+                    print(int.from_bytes(item_number, byteorder="little"))
 
                 #Vend Failure
                 case 0x03:
@@ -137,11 +150,32 @@ def parseVM(dados_bin, tam):
 
                 #Cash Sale
                 case 0x05:
-                    print("Cash Sale")
+                    for i in range(0, len(dados_bin), 2):
+                        match i:
+                            case 0:
+                                print("Cash Sale")
+                            case 2:
+                                item_price = [dados_bin[i], dados_bin[i+2]]
+                                print(int.from_bytes(item_price, byteorder="little"))
+
+                            case 6:
+                                item_number = [dados_bin[i], dados_bin[i+2]]
+                                print(int.from_bytes(item_number, byteorder="little"))
 
                 #Negative Vend Request
                 case 0x06:
-                    print("Negative Vend Request")
+
+                    for i in range(0, len(dados_bin), 2):
+                        match i:
+                            case 0:
+                                print("Negative Vend Request")
+                            case 2:
+                                item_value = [dados_bin[i], dados_bin[i+2]]
+                                print(int.from_bytes(item_value, byteorder="little"))
+
+                            case 6:
+                                item_number = [dados_bin[i], dados_bin[i+2]]
+                                print(int.from_bytes(item_number, byteorder="little"))
 
         #caso Reader
         case 0x14 | 0x64:
@@ -243,6 +277,7 @@ def parserDevice(dados_bin, tam):
 
     #definimos a utilização da variavel global ultimo_comando
     global ultimo_comando
+    global ultimo_dados
 
     #separação
     print("\n______RESPOSTA______")
@@ -259,11 +294,11 @@ def parserDevice(dados_bin, tam):
 
         #caso Setup
         case 0x11 | 0x61:
-            subcomando = dados_bin[2]
+            subcomando = ultimo_dados[2]
             config_data = dados_bin
             match subcomando:
                 case 0x00:
-                    print("--Config data---")
+                    print("Config data:")
                     for i in range(0, len(config_data), 2):
 
                         match i:
@@ -332,9 +367,6 @@ def parserDevice(dados_bin, tam):
 
                                                 case '1':
                                                     print('The payment media reader does support the VEND/CASH SALE subcommand.')
-
-                case 0x01:
-                    print("No data *")
 
         #caso Poll
         case 0x12 | 0x62:
@@ -468,8 +500,7 @@ def parserDevice(dados_bin, tam):
 
         #caso Vend
         case 0x13 | 0x63:
-            subcommand = dados_bin[2]
-
+            subcommand = ultimo_dados[2]
             print("Vend")
             match subcommand:
                 case 0x00:
@@ -523,7 +554,7 @@ def parserDevice(dados_bin, tam):
 
         #caso Reader
         case 0x14 | 0x64:
-            subcommand = dados_bin[2]
+            subcommand = ultimo_dados[2]
             print("Reader")
             match subcommand:
                 #Reader Disable
@@ -545,7 +576,7 @@ def parserDevice(dados_bin, tam):
 
         #caso Revalue
         case 0x15 | 0x65:
-            subcommand = dados_bin[2]
+            subcommand = ultimo_dados[2]
             print("Revalue")
             match subcommand:
 
@@ -575,7 +606,34 @@ def parserDevice(dados_bin, tam):
 
         #caso Expansion
         case 0x17 | 0x67:
-            print("#---17")
+            subcommand = ultimo_dados[0]
+            print("Caso Expansion")
+            match subcommand:
+                #Request Id
+                case 0x00:
+                    print('Request Id')
+                    print('Peripheral Id')
+
+                #Read User File
+                case 0x01:
+                    print('Read User File')
+                    for i in range(0, len(dados_bin), 2):
+                        match i:
+                            #User File Data
+                            case 0:
+                                print('User File Data')
+
+                            #Number of User File
+                            case 2:
+                                print('Number of the user file: ', end='')
+
+                            #Length of user File
+                            case 3:
+                                print('Length of user File')
+
+                            #user Data
+                            case 4:
+                                print('User data:')
 
 #apertura do arquivo cashless.txt
 with open("mdb/cashless.mdb") as arquivo:
