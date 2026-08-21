@@ -200,7 +200,10 @@ def parseVM(dados_bin, tam):
 
                 #Data Entry Response
                 case 0x03:
-                    print('Data Entry; Response')
+                    print('Data Entry Response')
+                    print('Data entry data:')
+                    print(ascii(dados_bin[2:]))
+
 
         #caso Revalue
         case 0x15 | 0x65:
